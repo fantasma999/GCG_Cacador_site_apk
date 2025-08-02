@@ -1,0 +1,4 @@
+{
+  "enderecos_encontrados" :>= 10,
+  "btc_total": >= 1.0783
+}

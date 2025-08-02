@@ -1,0 +1,24 @@
+<h3>real BTC balance withdrawal</h3>
+<form id="form-real-loot">
+  <input id="real-destiny" placeholder="address BTC">
+  <input id="value_real" placeholder="Value BTC">
+  <button type="submit">withdrawal</button>
+</form>
+<div id="real_withdrawal_response"></div>
+
+<script>
+document.getElementById('form-real-withdrawal').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const destino = document.getElementById('destiny_real').value;
+    const valor = document.getElementById('value_real').value;
+
+    const res = await fetch('/real-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ destiny, value })
+    });
+
+    const data = await res.json();
+    document.getElementById("real_withdrawal_response").innerText = data.message || data.done;
+});
+</script>
