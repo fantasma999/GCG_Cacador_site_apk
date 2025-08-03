@@ -11,6 +11,8 @@ app.secret_key = os.getenv("secret_key")
 def home():
     return "GCG Caçador website live via Tor!"
 
+# para fins educacionais 
+
 "basic information"
 APP_INFO = {
     "version": "1.0",
