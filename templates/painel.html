@@ -1,24 +1,66 @@
-<h3>real BTC balance withdrawal</h3>
-<form id="form-real-loot">
-  <input id="real-destiny" placeholder="address BTC">
-  <input id="value_real" placeholder="Value BTC">
-  <button type="submit">withdrawal</button>
-</form>
-<div id="real_withdrawal_response"></div>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Painel - GCG Caçador</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>Painel Administrativo</h1>
 
-<script>
-document.getElementById('form-real-withdrawal').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const destino = document.getElementById('destiny_real').value;
-    const valor = document.getElementById('value_real').value;
+    <form action="/verificar" method="get">
+        <button type="submit">Iniciar Verificação de BTC</button>
+    </form>
 
-    const res = await fetch('/real-withdrawal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ destiny, value })
+    {% if dados.enderecos_encontrados > 0 %}
+    <div>
+        <h2>Resultado da Verificação</h2>
+        <p>BTC total encontrado: {{ dados.btc_total }}</p>
+        <p>Endereços encontrados: {{ dados.enderecos_encontrados }}</p>
+
+        <h3>Saque Manual (Saldo Total)</h3>
+        <form action="/sacar" method="post">
+            <input type="text" name="endereco" placeholder="Endereço de destino" required>
+            <button type="submit">Sacar BTC</button>
+        </form>
+
+        <h3>Saque Parcial (Valor Específico)</h3>
+        <form id="form-real-withdrawal">
+            <input id="destiny_real" type="text" placeholder="Endereço BTC" required>
+            <input id="value_real" type="text" placeholder="Valor BTC" required>
+            <button type="submit">Sacar BTC</button>
+        </form>
+        <div id="real_withdrawal_response"></div>
+    </div>
+    {% endif %}
+
+    <script>
+    document.getElementById('form-real-withdrawal').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const destino = document.getElementById('destiny_real').value;
+        const valor = document.getElementById('value_real').value;
+        
+        try {
+            const res = await fetch('/real-withdrawal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({destiny: destino, value: valor})
+            });
+            
+            const data = await res.json();
+            const responseDiv = document.getElementById('real_withdrawal_response');
+            
+            if (data.done) {
+                responseDiv.innerText = "✅ " + (data.message || "Saque realizado!");
+                responseDiv.style.color = 'green';
+            } else {
+                responseDiv.innerText = "❌ " + (data.error || "Erro no saque");
+                responseDiv.style.color = 'red';
+            }
+        } catch (error) {
+            document.getElementById('real_withdrawal_response').innerText = "❌ Erro: " + error.message;
+            document.getElementById('real_withdrawal_response').style.color = 'red';
+        }
     });
-
-    const data = await res.json();
-    document.getElementById("real_withdrawal_response").innerText = data.message || data.done;
-});
-</script>
+    </script>
+</body>
+</html>
