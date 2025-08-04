@@ -78,6 +78,19 @@ def balance_eth():
         "balance": balance_wei / 1e18
     })
 
+@app.route('/real-withdrawal', methods=['POST'])
+def real_withdrawal():
+    data = request.get_json()
+    destino = data['destiny']
+    valor = data['value']
+    
+    # Para fins educacionais 
+    
+    return jsonify({
+        'done': True,
+        'message': f'Saque de {valor} BTC enviado para {destino}'
+    })
+
 
 "Authorized Manual Withdrawal"
 @app.route("/withdrawal_real_", methods=["POST"])
