@@ -1,1 +1,2 @@
-
+git commit -m "Adicionei o arquivo index.html e painel.html"
+git push origin app.py
