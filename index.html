@@ -1,19 +1,87 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>Login - GCG Caçador</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #00ff00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #00ff00;
+            text-align: center;
+            min-width: 300px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #00ff00;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        input::placeholder {
+            color: #666;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00ff00;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 10px;
+        }
+        .app-title {
+            color: #00ff00;
+            margin-bottom: 30px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Login</h2>
-    <form method="POST">
-        <input type="text" name="usuario" placeholder="Usuário" required><br>
-        <input type="password" name="senha" placeholder="Senha" required><br>
-        <button type="submit">Entrar</button>
-    </form>
-
-    {% if erro %}
-    <p style="color:red;">{{ erro }}</p>
-    {% endif %}
+    <div class="login-container">
+        <h1 class="app-title">🔒 GCG Caçador</h1>
+        <h2>Acesso Administrativo</h2>
+        <form method="POST">
+            <input type="text" name="usuario" placeholder="Usuário" required>
+            <input type="password" name="senha" placeholder="Senha" required>
+            <button type="submit">Entrar no Sistema</button>
+        </form>
+        
+        {% if erro %}
+        <p class="error">❌ {{ erro }}</p>
+        {% endif %}
+        
+        <div style="margin-top: 20px; font-size: 12px; color: #666;">
+            Sistema de gerenciamento seguro
+        </div>
+    </div>
 </body>
-</html>
+    </html>
