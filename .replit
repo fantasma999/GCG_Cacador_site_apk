@@ -8,7 +8,7 @@ channel = "stable-25_05"
 run = ["sh", "-c", "python app.py"]
 
 [workflows]
-runButton = "Run Flask App"
+runButton = "Run App"
 
 [[workflows.workflow]]
 name = "Run Flask App"
@@ -18,3 +18,16 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python app.py"
+
+[[workflows.workflow]]
+name = "Run App"
+author = 46058976
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
