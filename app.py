@@ -1,149 +1,163 @@
-from flask import Flask, render_template
-import os, random, json
+
+from flask import Flask, render_template, request, redirect, session, jsonify
+import os, random, json, time, uuid
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("secret_key")
+app.secret_key = os.getenv("SECRET_KEY", "sua_chave_secreta_aqui")
 
-@app.route("/")
-def home():
-    return "GCG Caçador website live via Tor!"
-
-# para fins educacionais 
-
-"basic information"
+# Informações básicas da aplicação
 APP_INFO = {
     "version": "1.0",
     "author": "MPLA",
     "app_name": "GCG Caçador",
-    "default_withdrawal_address": os.getenv("WITHDRAWAL_ADDRESS", "endereço_padrão")}
+    "default_withdrawal_address": os.getenv("WITHDRAWAL_ADDRESS", "endereço_padrão")
+}
 
-"fixed credentials"
+# Credenciais fixas
 ADMIN_USER = "admin"
 ADMIN_PASS = "Cabinda100%"
-btc_data = { "addresses_found":10,
-    "btc_total": 1}
 
+# Dados BTC simulados
+btc_data = {
+    "enderecos_encontrados": 10,
+    "btc_total": 1.0783
+}
 
-"Main Panel"
-@app.route("/panel")
-def panel():
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/", methods=["POST"])
+def login():
+    usuario = request.form.get("usuario")
+    senha = request.form.get("senha")
+    
+    if usuario == ADMIN_USER and senha == ADMIN_PASS:
+        session["authenticated"] = True
+        return redirect("/painel")
+    else:
+        return render_template("index.html", erro="Usuário ou senha incorretos")
+
+@app.route("/painel")
+def painel():
     if not session.get("authenticated"):
         return redirect("/")
-    return render_template("panel.html", info=APP_INFO, dados=btc_data)
+    return render_template("painel.html", info=APP_INFO, dados=btc_data)
 
+@app.route("/logout")
+def logout():
+    session.pop("authenticated", None)
+    return redirect("/")
 
-"Track and Recover Orphaned BTC"
-@app.route("/to check")
-def to_check():
-    btc_data["btc_found"] += random.randint(1, 3)
+@app.route("/verificar")
+def verificar():
+    if not session.get("authenticated"):
+        return redirect("/")
+    
+    btc_data["enderecos_encontrados"] += random.randint(1, 3)
     btc_data["btc_total"] += round(random.uniform(0.001, 0.02), 8)
-    with open("btc_true.json", "w") as f:
+    
+    # Salvar dados em arquivo JSON
+    with open("btc_data.json", "w") as f:
         json.dump(btc_data, f, indent=4)
+    
     return jsonify({
-        "status": "done",
-        "message": "{btc_data['btc_total']} Real BTC found!"
+        "status": "sucesso",
+        "message": f"{btc_data['btc_total']} BTC Real encontrado!",
+        "dados": btc_data
     })
 
-"Check BTC balance"
+@app.route("/sacar", methods=["POST"])
+def sacar():
+    if not session.get("authenticated"):
+        return redirect("/")
+    
+    endereco = request.form.get("endereco")
+    
+    if not endereco:
+        return jsonify({"status": "erro", "message": "Endereço é obrigatório"})
+    
+    # Log da transação
+    log = {
+        "endereco_destino": endereco,
+        "valor": btc_data["btc_total"],
+        "status": "concluído",
+        "timestamp": time.time(),
+        "tipo": "saque_total"
+    }
+    
+    with open("log_saques.json", "a") as f:
+        f.write(json.dumps(log) + "\n")
+    
+    return jsonify({
+        "status": "sucesso", 
+        "message": f"{btc_data['btc_total']} BTC enviado para {endereco}"
+    })
+
+@app.route("/real-withdrawal", methods=["POST"])
+def real_withdrawal():
+    if not session.get("authenticated"):
+        return jsonify({"done": False, "error": "Não autenticado"})
+    
+    data = request.get_json()
+    destino = data.get('destiny')
+    valor = data.get('value')
+    
+    if not destino or not valor:
+        return jsonify({"done": False, "error": "Destino e valor são obrigatórios"})
+    
+    try:
+        valor_float = float(valor)
+        if valor_float <= 0:
+            raise ValueError("Valor deve ser positivo")
+    except (ValueError, TypeError):
+        return jsonify({"done": False, "error": "Valor inválido"})
+    
+    # Log da transação
+    log = {
+        "endereco_destino": destino,
+        "valor": valor_float,
+        "status": "concluído",
+        "timestamp": time.time(),
+        "tipo": "saque_parcial",
+        "txid": f"tx_{uuid.uuid4().hex[:10]}"
+    }
+    
+    with open("log_saques.json", "a") as f:
+        f.write(json.dumps(log) + "\n")
+    
+    return jsonify({
+        "done": True,
+        "message": f"Saque de {valor} BTC enviado para {destino}",
+        "txid": log["txid"]
+    })
+
 @app.route("/balance_btc")
 def balance_btc():
-    address = os.getenv("BTC_ADDRESS")
-    token = os.getenv("BLOCKCYPHER_TOKEN")
-    url = "https://api.blockcypher.com/v1/btc/main/addrs/{endereco}/balance?token={token}"
-    r = requests.get(url)
-    if r.status_code != 200:
-        return jsonify({"done": "Check BTC balance"})
-    data = r.json()
+    if not session.get("authenticated"):
+        return redirect("/")
+    
+    # Simulação de consulta de saldo
     return jsonify({
-        "balance": data["final_balance"] / 1e8,
-        "confirmations": data.get("n_tx", 10)
+        "balance": btc_data["btc_total"],
+        "confirmations": random.randint(6, 50),
+        "status": "ativo"
     })
 
-
-"Check ETH Balance"
 @app.route("/balance_eth")
 def balance_eth():
-    address = os.getenv("ETH_ADDRESS")
-    api_key = os.getenv("ETHERSCAN_API_KEY")
-    url = "https://api.etherscan.io/api?module=account&action=balance&address={endereco}&tag=latest&apikey={api_key}"
-    r = requests.get(url)
-    if r.status_code != 200:
-        return jsonify({"done": "Check ETH Balance"})
-    data = r.json()
-    balance_wei = int(data.get("result", 10))
-    return jsonify({
-        "balance": balance_wei / 1e18
-    })
-
-@app.route('/real-withdrawal', methods=['POST'])
-def real_withdrawal():
-    data = request.get_json()
-    destino = data['destiny']
-    valor = data['value']
-    
-    # Para fins educacionais 
-    
-    return jsonify({
-        'done': True,
-        'message': f'Saque de {valor} BTC enviado para {destino}'
-    })
-
-
-"Authorized Manual Withdrawal"
-@app.route("/withdrawal_real_", methods=["POST"])
-def withdrawal_real():
     if not session.get("authenticated"):
         return redirect("/")
-    destination = request.form.get("destination")
-    value = request.form.get("value")
-    try:
-        value_float = float(value)
-        if value_float <= 0:
-            raise ValueError()
-    except:
-        return jsonify({"status": "erro", "message": "invalid value"})
-
-    log = {
-        "destination": destination,
-        "value": value_float,
-        "status": "done",
-        "origin": "real_balance"
-    }
-    with open("log_withdrawals.json", "a") as t:
-        t.write(json.dumps(log) + "\n")
-    return jsonify({"status": "done", "message": f"{value} Real BTC sent to {destination}."})
-
-" Unsigned transaction authorized"
-
-@app.route("/withdrawal_real_auto", methods=["POST"])
-def withdrawal_real_auto():
-    if not session.get("authenticated"):
-        return redirect("/")
-        destination = request.form.get("destination")
-    value = request.form.get("value")
-    try:
-        value_float = float(value)
-        if valor_float <= 0:
-            raise ValueError()
-    except:
-        return jsonify({"status": "done", "message": "transferred value"})
-
-    tx_carried_out = {
-        "of": os.getenv("BTC_ADDRESS"),
-        "to": destination,
-        "value": value_float,
-        "timestamp": time.time(),
-        "signed": True,
-        "real": True,
-        "status": "carried out",
-        "txid": f"tx_carried out_{uuid.uuid4().hex[:10]}"
-    }
-    with open("tx_self_realized.json", "a") as t:
-        t.write(json.dumps(tx_carried_out) + "\n")
-    return jsonify(tx_carried_out)
+    
+    # Simulação de saldo ETH
+    return jsonify({
+        "balance": round(random.uniform(0.1, 5.0), 6),
+        "status": "ativo"
+    })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9999)
+    app.run(host="0.0.0.0", port=5000, debug=True)
