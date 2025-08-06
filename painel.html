@@ -1,37 +1,50 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>Painel - GCG Caçador</title>
     <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; }
+        .result { background: #f8f9fa; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+    </style>
 </head>
 <body>
-    <h1>Painel Administrativo</h1>
+    <div class="container">
+        <h1>Painel Administrativo - {{ info.app_name }}</h1>
+        
+        <div>
+            <h3>Controles</h3>
+            <a href="/verificar"><button>Iniciar Verificação de BTC</button></a>
+            <a href="/logout"><button style="background: #dc3545;">Logout</button></a>
+        </div>
 
-    <form action="/verificar" method="get">
-        <button type="submit">Iniciar Verificação de BTC</button>
-    </form>
+        {% if dados.enderecos_encontrados > 0 %}
+        <div class="result">
+            <h2>Resultado da Verificação</h2>
+            <p><strong>BTC total encontrado:</strong> {{ dados.btc_total }}</p>
+            <p><strong>Endereços encontrados:</strong> {{ dados.enderecos_encontrados }}</p>
 
-    {% if dados.enderecos_encontrados > 0 %}
-    <div>
-        <h2>Resultado da Verificação</h2>
-        <p>BTC total encontrado: {{ dados.btc_total }}</p>
-        <p>Endereços encontrados: {{ dados.enderecos_encontrados }}</p>
+            <h3>Saque Manual (Saldo Total)</h3>
+            <form action="/sacar" method="post">
+                <input type="text" name="endereco" placeholder="Endereço de destino" required>
+                <button type="submit">Sacar Todo BTC</button>
+            </form>
 
-        <h3>Saque Manual (Saldo Total)</h3>
-        <form action="/sacar" method="post">
-            <input type="text" name="endereco" placeholder="Endereço de destino" required>
-            <button type="submit">Sacar BTC</button>
-        </form>
-
-        <h3>Saque Parcial (Valor Específico)</h3>
-        <form id="form-real-withdrawal">
-            <input id="destiny_real" type="text" placeholder="Endereço BTC" required>
-            <input id="value_real" type="text" placeholder="Valor BTC" required>
-            <button type="submit">Sacar BTC</button>
-        </form>
-        <div id="real_withdrawal_response"></div>
+            <h3>Saque Parcial (Valor Específico)</h3>
+            <form id="form-real-withdrawal">
+                <input id="destiny_real" type="text" placeholder="Endereço BTC" required>
+                <input id="value_real" type="number" step="0.00000001" placeholder="Valor BTC" required>
+                <button type="submit">Sacar BTC</button>
+            </form>
+            <div id="real_withdrawal_response"></div>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
     <script>
     document.getElementById('form-real-withdrawal').addEventListener('submit', async function(e) {
@@ -50,14 +63,14 @@
             const responseDiv = document.getElementById('real_withdrawal_response');
             
             if (data.done) {
-                responseDiv.innerText = "✅ " + (data.message || "Saque realizado!");
+                responseDiv.innerHTML = "✅ " + (data.message || "Saque realizado!");
                 responseDiv.style.color = 'green';
             } else {
-                responseDiv.innerText = "❌ " + (data.error || "Erro no saque");
+                responseDiv.innerHTML = "❌ " + (data.error || "Erro no saque");
                 responseDiv.style.color = 'red';
             }
         } catch (error) {
-            document.getElementById('real_withdrawal_response').innerText = "❌ Erro: " + error.message;
+            document.getElementById('real_withdrawal_response').innerHTML = "❌ Erro: " + error.message;
             document.getElementById('real_withdrawal_response').style.color = 'red';
         }
     });
